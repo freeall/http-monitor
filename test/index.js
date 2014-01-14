@@ -96,7 +96,7 @@ var test7 = function() {
 	});
 };
 
-server.listen(13532, function() {
+server.listen(PORT, function() {
 	test1();
 	test2();
 	test3();

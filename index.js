@@ -5,7 +5,7 @@ module.exports = function(url, options, callback) {
 	options = options || {};
 	options.interval = options.interval || 5000;
 	options.tries = options.tries || 1;
-	options.once = options.once === undefined ? false : options.once;
+	options.once = !!options.once;
 	options.allowed = options.allowed || [];
 	options.disallowed = options.disallowed || [];
 
