@@ -4,13 +4,18 @@
   "description": "monitor http application, and execute command if they fail",
   "main": "index.js",
   "dependencies": {
-    "httpcheck": "0.0.1"
+    "httpcheck": "0.0.1",
+    "optimist": "~0.6.0",
+    "parse-duration": "~0.1.0"
   },
   "devDependencies": {
     "tap": "~0.4.8"
   },
   "scripts": {
     "test": "tap test/index.js"
+  },
+  "bin": {
+    "http-monitor": "bin/http-monitor"
   },
   "keywords": [
     "http",

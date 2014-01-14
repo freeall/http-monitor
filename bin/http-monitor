@@ -1,0 +1,82 @@
+#!/usr/bin/env node
+/*
+	http-monitor http://localhost:12345/foo
+		--on-error
+		--on-connection-error "...." // When there is no reply from the server
+		--on-http-error "...."       // When there is a 4xx or 5xx response code
+		--once                       // Only run one check and then exit
+		--interval 5min
+		--timeout 1min
+		--allow 501
+		--disallow 301
+		--max-retries 4
+	 
+	The "...." binds a few variables.
+	$url='http://localhost:12345/foo'
+	$errorcode='505'
+	$message='Got a bad response from mongohq.com, blablaa'
+	 
+	Eg,
+	--on-connection-error "sendtext 22305200 No response from $url"
+	--on-http-error "sendtext 22305200 Error: $errorcode\nUrl: $url\nMessage:$message"
+*/
+
+
+var monitor = require('../');
+var optimist = require('optimist');
+var duration = require('parse-duration');
+var cp = require('child_process');
+
+var argv = optimist.argv;
+
+var url = argv._[0];
+var once = argv.once;
+var allowed = argv.allow || [];
+var disallowed = argv.disallow || [];
+var retries = argv.retries || 1;
+var interval = argv.interval && duration(argv.interval);
+var onerror = argv['on-error'] || '';
+var onconnectionerror = argv['on-connection-error'] || '';
+var onhttperror = argv['on-http-error'] || '';
+
+var replace = function(str, url, statusCode, body) {
+	return (str || '')
+		.replace(/%url/ig, url)
+		.replace(/%statuscode/ig, statusCode)
+		.replace(/%body/ig, body)
+};
+
+var exec = function(err, stdout, stderr) {
+	if (stdout) console.log(stdout);
+	if (stderr) console.error(stderr);
+	if (err) console.error(err);
+};
+
+if (once) {
+	console.log('Settings');
+	console.log('	URL:', url);
+	console.log('	Interval:', interval);
+	console.log('	Max retries:', retries);
+	console.log('	Allowed erronous status codes (4xx, 5xx):', allowed);
+	console.log('	Disallowed succesful status codes (1xx, 2xx, 3xx):', disallowed);
+	console.log('	On http error:', onhttperror);
+	console.log('	On connection error:', onconnectionerror);
+	console.log('	On (connection and http) error:', onerror);
+}
+monitor(url, {
+	once: once,
+	allowed: allowed,
+	disallowed: disallowed,
+	interval: interval,
+	retries: retries
+}, function(err, statusCode, body) {
+	if (!err) return;
+
+	// connection error
+	if (!statusCode && onconnectionerror) cp.exec(replace(onconnectionerror, url, statusCode, body), exec);
+	if (!statusCode && onerror) cp.exec(replace(onerror, url, statusCode, body), exec);
+
+	// http error
+	if (statusCode && onhttperror) cp.exec(replace(onhttperror, url, statusCode, body), exec);
+	if (statusCode && onerror) cp.exec(replace(onerror, url, statusCode, body), exec);
+});
