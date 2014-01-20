@@ -19,7 +19,7 @@ http-monitor http://localhost:12345/foo
 	--max-retries 4                        # How many times to retry
 	--allow 501                            # Allow a 4xx or 5xx code which would otherwise cause an error
 	--disallow 301                         # Disallow a 1xx, 2xx, or 3xx code which wouldn't otherwise cause an error
-	--test
+	--once                                 # Only run once, then exit
  ```
 
 The `"commandline..."` part is a command you want executed when an error occurs. You can use `%url`, `%statuscode`, and `%body` in this. e.g. `--on-error "call 1234567890 Hi Bill. Server crashed, %url. Returned %statuscode and %body"`.
