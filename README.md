@@ -12,8 +12,8 @@ Will report an error on none, 4xx, or 5xx
 
 ```
 http-monitor http://localhost:12345/foo
-	--on-error "commandline..."            # When both connection/http errors occur
-	--on-connection-error "commandline..." # When there is no reply from the server
+	--on-error "commandline..."            # When either connection/http errors occur
+	--on-connection-error "commandline..." # When there is a connection errror (no reply) from the server
 	--on-http-error "commandline..."       # When there is a 4xx or 5xx response code
 	--interval 5min                        # How often to check
 	--max-retries 4                        # How many times to retry
