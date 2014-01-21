@@ -1,27 +1,4 @@
 #!/usr/bin/env node
-/*
-	http-monitor http://localhost:12345/foo
-		--on-error
-		--on-connection-error "...." // When there is no reply from the server
-		--on-http-error "...."       // When there is a 4xx or 5xx response code
-		--once                       // Only run one check and then exit
-		--interval 5min
-		--timeout 1min
-		--allow 501
-		--disallow 301
-		--max-retries 4
-	 
-	The "...." binds a few variables.
-	$url='http://localhost:12345/foo'
-	$errorcode='505'
-	$message='Got a bad response from mongohq.com, blablaa'
-	 
-	Eg,
-	--on-connection-error "sendtext 22305200 No response from $url"
-	--on-http-error "sendtext 22305200 Error: $errorcode\nUrl: $url\nMessage:$message"
-*/
-
-
 var monitor = require('../');
 var optimist = require('optimist');
 var duration = require('parse-duration');
@@ -35,6 +12,7 @@ if (argv.help || process.argv.length === 2) {
 	console.log('	--on-http-error "command..."       When there is a 4xx or 5xx response code');
 	console.log('	--on-connection-error "command..." When there is a connection errror (no reply) from the server');
 	console.log('	--on-error "command..."            When either a connection/http error occur');
+	console.log('	--on-recovery "command..."         When the server recovers after a period with errors');
 	console.log('	--interval 5min                    How often to check');
 	console.log('	--retries 4                        How many times to retry');
 	console.log('	--allow 501                        Allow a 4xx or 5xx code which would otherwise cause an error');
@@ -52,6 +30,7 @@ var interval = argv.interval && duration(argv.interval);
 var onerror = argv['on-error'] || '';
 var onconnectionerror = argv['on-connection-error'] || '';
 var onhttperror = argv['on-http-error'] || '';
+var onrecovery = argv['on-recovery'] || '';
 
 var replace = function(str, url, statusCode, body) {
 	return (str || '')
@@ -76,6 +55,7 @@ if (once) {
 	console.log('	On http error:', onhttperror);
 	console.log('	On connection error:', onconnectionerror);
 	console.log('	On (connection and http) error:', onerror);
+	console.log('	On recovery:', onrecovery);
 }
 monitor(url, {
 	once: once,
@@ -84,6 +64,7 @@ monitor(url, {
 	interval: interval,
 	retries: retries
 }, function(err, statusCode, body) {
+	if (!err && onrecovery) cp.exec(onrecovery, exec);
 	if (!err) return;
 
 	// connection error
