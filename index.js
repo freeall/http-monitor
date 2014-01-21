@@ -4,11 +4,13 @@ module.exports = function(url, options, callback) {
 	if (arguments.length === 2) return module.exports(url, null, options);
 	options = options || {};
 	options.interval = options.interval || 5000;
-	options.tries = options.tries || 1;
-	options.once = !!options.once;
+	options.retries = options.retries || 1;
 	options.allowed = options.allowed || [];
 	options.disallowed = options.disallowed || [];
+	options.once = !!options.once;
 
+	var inErrorState = false;
+	var keepRunning = !options.once;
 	var checks = 0;
 	var doCheck = function() {
 		var statusCode;
@@ -17,9 +19,10 @@ module.exports = function(url, options, callback) {
 		check({
 			url: url,
 			checkInterval: options.interval || 5000,
-			checkTries: options.tries || 1,
+			checkTries: options.retries || 1,
 			log: function(){},
 			check: function(request) {
+				// console.log('check check')
 				statusCode = request.statusCode;
 				body = request.body;
 
@@ -32,15 +35,33 @@ module.exports = function(url, options, callback) {
 				return true;
 			}
 		}, function(err) {
-			callback(err, statusCode, body);
+			if (err) err.statusCode = statusCode;
+			if (err) err.body = body;
+
+			if (options.once) return callback(err);
+			if (!keepRunning) return;
+
+			if (err && !inErrorState) {
+				inErrorState = true;
+				callback(err);
+			}
+			if (!err && inErrorState) {
+				inErrorState = false;
+				callback(null);
+			}
+
 			wait();
 		});
 	};
 
 	var wait = function() {
-		if (options.once && checks++) return;
+		if (!keepRunning && checks++) return;
 		setTimeout(doCheck, options.interval);
 	};
 
 	wait();
+
+	return function() {
+		keepRunning = false;
+	};
 };

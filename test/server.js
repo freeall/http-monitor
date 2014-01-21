@@ -1,6 +1,7 @@
 var http = require('http');
 
-var requests = 0;
+var requestsEveryThirdIsOk = 0;
+var requestsFailAfterThird = 0;
 var server = http.createServer(function(request, response) {
 	var url = request.url;
 
@@ -11,11 +12,20 @@ var server = http.createServer(function(request, response) {
 		return response.end('error');
 	}
 	if (url === '/everyThirdIsOk') {
-		response.statusCode = !(++requests % 3) ? 200 : 500;
+		++requestsEveryThirdIsOk;
+		response.statusCode = !(requestsEveryThirdIsOk % 3) ? 500 : 200;
 		return response.end();
 	}
-	if (url === '/reset') {
-		requests = 0;
+	if (url === '/resetEveryThirdIsOk') {
+		requestsEveryThirdIsOk = 0;
+		return response.end();
+	}
+	if (url === '/failAfterThird') {
+		response.statusCode = ++requestsFailAfterThird > 3 ? 500 : 200;
+		return response.end();
+	}
+	if (url === '/resetFailAfterThird') {
+		requestsFailAfterThird = 0;
 		return response.end();
 	}
 });

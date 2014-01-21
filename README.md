@@ -2,7 +2,7 @@
 
 Check if a server is running. Is both a module and an executable.
 
-Will report an error on none, 4xx, or 5xx
+Will report an error if there is the statuscode is 4xx, 5xx or if the server doesn't respond.
 
 ## Installation
 
@@ -10,19 +10,30 @@ Will report an error on none, 4xx, or 5xx
 
 ## Usage (command-line)
 
+With the commandline tool you can set up commands that will be executed when the status of the server changes:
+
+* The server responds with a 4xx or 5xx error code
+* The server doesn't respond (no reply)
+* The server recovers after some time where it errored
+
+The commands will only be called once if the state of the server changes. Like this scenario:
+
+	The server is running perfectly for 3 days, but now stops replying. This will cause the on-connection-error to be executed once. After 30 minutes the server starts to reply again, and then the on-recovery command is executed once.
+
 ```
 http-monitor http://localhost:12345/foo
-	--on-http-error "commandline..."       # When there is a 4xx or 5xx response code
-	--on-connection-error "commandline..." # When there is a connection errror (no reply) from the server
-	--on-error "commandline..."            # When either a connection/http error occur
-	--interval 5min                        # How often to check
-	--max-retries 4                        # How many times to retry
-	--allow 501                            # Allow a 4xx or 5xx code which would otherwise cause an error
-	--disallow 301                         # Disallow a 1xx, 2xx, or 3xx code which wouldn't otherwise cause an error
-	--once                                 # Only run once, then exit
+	--on-http-error "command..."       # When there is a 4xx or 5xx response code
+	--on-connection-error "command..." # When there is a connection errror (no reply) from the server
+	--on-error "command..."            # When either a connection/http error occur
+	--on-recovery "command..."         # When the server recovers after a period with errors
+	--interval 5min                    # How often to check
+	--retries 4                        # How many times to retry
+	--allow 501                        # Allow a 4xx or 5xx code which would otherwise cause an error
+	--disallow 301                     # Disallow a 1xx, 2xx, or 3xx code which wouldn't otherwise cause an error
+	--once                             # Only run once, then call callback and exit
  ```
 
-The `"commandline..."` part is a command you want executed when an error occurs. You can use `%url`, `%statuscode`, and `%body` in this. e.g. `--on-error "call 1234567890 Hi Bill. Server crashed, %url. Returned %statuscode and %body"`.
+The `"command..."` part is a command you want executed when an error occurs. You can use `%url`, `%statuscode`, and `%body` in this. e.g. `--on-http-error "call 1234567890 Hi Bill. Server crashed, %url. Returned %statuscode and %body"`.
 
 ## Usage (module)
 
@@ -33,14 +44,27 @@ var monitor = require('http-monitor');
 
 monitor('http://localhost:13532/', {
 	tries: 1
-}, function(err, statusCode, body) {
-	if (!err) return;
-	if (!statusCode) {
-		console.log('Could not reach host');
-	} else {
-		console.log('Error! ['+statusCode+'] '+body);
-	}
+}, function(err) {
+	if (!err) return console.log('The server just recovered after having had downtime');
+	if (!err.statusCode) console.log('The server could not be reached');
+	if (err.statusCode) console.log('The server returned a '+err.statusCode+' statuscode, with the body:'+err.body);
 });
+```
+
+### Stopping the monitoring
+
+The `monitor` function returns a stop-function. Call this to stop the monitor.
+
+``` js
+var monitor = require('http-monitor');
+
+var stop = monitor('http://localhost:13532/', {
+	tries: 1
+}, function(err) {
+	console.log(err);
+});
+
+setTimeout(stop, 60000); // Stop the monitor after 60 seconds
 ```
 
 ### Options
@@ -49,7 +73,7 @@ monitor('http://localhost:13532/', {
 
 How many miliseconds to wait between the checks. Default is `5000`.
 
-#### tries (integer)
+#### retries (integer)
 
 How many tries in a row that should fail before it will call the callback with an error. Default is `1`.
 
@@ -63,4 +87,4 @@ As default http-monitor will call the callback without an error if the server re
 
 #### once (bool)
 
-http-monitor will keep pinging the server at the url, but if you set once to true, then it will only happen once and after the callback has been called the first time, it will stop. Default is `false`.
+Normally http-monitor will keep pinging the server at the url, but if you set once to true, then it will only happen once and after the callback has been called the first time, it will stop. Default is `false`.

@@ -29,6 +29,20 @@ var cp = require('child_process');
 
 var argv = optimist.argv;
 
+if (argv.help || process.argv.length === 2) {
+	console.log('Usage: http-monitor url [options...]');
+	console.log('Options:');
+	console.log('	--on-http-error "command..."       When there is a 4xx or 5xx response code');
+	console.log('	--on-connection-error "command..." When there is a connection errror (no reply) from the server');
+	console.log('	--on-error "command..."            When either a connection/http error occur');
+	console.log('	--interval 5min                    How often to check');
+	console.log('	--retries 4                        How many times to retry');
+	console.log('	--allow 501                        Allow a 4xx or 5xx code which would otherwise cause an error');
+	console.log('	--disallow 301                     Disallow a 1xx, 2xx, or 3xx code which wouldn\'t otherwise cause an error');
+	console.log('	--once                             Only run once, then exit');
+	return;
+}
+
 var url = argv._[0];
 var once = argv.once;
 var allowed = argv.allow || [];
