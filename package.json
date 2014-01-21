@@ -12,7 +12,8 @@
     "tap": "~0.4.8"
   },
   "scripts": {
-    "test": "tap test/index.js"
+    "test": "tap test/index.js",
+    "server": "node test/server.js"
   },
   "bin": {
     "http-monitor": "bin/http-monitor"

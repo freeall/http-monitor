@@ -1,1 +1,1 @@
-http-monitor http://localhost:13532/500 --once --interval 1s --on-error "echo Error in %url. Statuscode: %statuscode. Body: %body" --allow 501 --allow 502
+http-monitor http://localhost:13532/switchBetweenErrorARecovery --on-error "echo error" --on-recovery "echo recovery" --interval 200ms --retries 1
