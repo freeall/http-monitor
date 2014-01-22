@@ -3,6 +3,10 @@
   "version": "0.2.0",
   "description": "Monitor an http application, and invoke if the server status changes. Both a module and a commandline tool.",
   "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:freeall/http-monitor.git"
+  },
   "dependencies": {
     "httpcheck": "~0.2.0",
     "optimist": "~0.6.0",
