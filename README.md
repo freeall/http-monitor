@@ -1,4 +1,4 @@
-# http-monitor
+# http-monitor [![build status](https://secure.travis-ci.org/freeall/http-monitor.png)](http://travis-ci.org/freeall/http-monitor)
 
 Check if a server is running. Is both a module and an executable.
 
