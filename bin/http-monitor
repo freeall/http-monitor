@@ -15,6 +15,7 @@ if (argv.help || process.argv.length === 2) {
 	console.log('	--on-recovery "command..."         When the server recovers after a period with errors');
 	console.log('	--interval 5min                    How often to check');
 	console.log('	--retries 4                        How many times to retry');
+	console.log('	--timeout 5s                       How long before claiming a timeout (causes a connection error)');
 	console.log('	--allow 501                        Allow a 4xx or 5xx code which would otherwise cause an error');
 	console.log('	--disallow 301                     Disallow a 1xx, 2xx, or 3xx code which wouldn\'t otherwise cause an error');
 	console.log('	--once                             Only run once, then exit');
@@ -26,6 +27,7 @@ var once = argv.once;
 var allowed = argv.allow || [];
 var disallowed = argv.disallow || [];
 var retries = argv.retries || 1;
+var timeout = argv.timeout && duration(argv.timeout);
 var interval = argv.interval && duration(argv.interval);
 var onerror = argv['on-error'] || '';
 var onconnectionerror = argv['on-connection-error'] || '';
@@ -50,6 +52,7 @@ if (once) {
 	console.log('	URL:', url);
 	console.log('	Interval:', interval);
 	console.log('	Max retries:', retries);
+	console.log('	Timeout:', timeout);
 	console.log('	Allowed erronous status codes (4xx, 5xx):', allowed);
 	console.log('	Disallowed succesful status codes (1xx, 2xx, 3xx):', disallowed);
 	console.log('	On http error:', onhttperror);
@@ -62,7 +65,8 @@ monitor(url, {
 	allowed: allowed,
 	disallowed: disallowed,
 	interval: interval,
-	retries: retries
+	retries: retries,
+	timeout: timeout
 }, function(err, statusCode, body) {
 	if (!err && onrecovery) cp.exec(onrecovery, exec);
 	if (!err) return;

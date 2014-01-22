@@ -18,11 +18,11 @@ module.exports = function(url, options, callback) {
 
 		check({
 			url: url,
-			checkInterval: options.interval || 5000,
-			checkTries: options.retries || 1,
+			checkInterval: options.interval,
+			checkTries: options.retries,
+			checkTimeout: options.timeout,
 			log: function(){},
 			check: function(request) {
-				// console.log('check check')
 				statusCode = request.statusCode;
 				body = request.body;
 

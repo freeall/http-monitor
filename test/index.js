@@ -126,6 +126,21 @@ var test8 = function() {
 		}, 2000);
 	});
 };
+var test9 = function() {
+	var options = {
+		interval: 10,
+		timeout: 100,
+		retries: 2,
+		once: true
+	};
+
+	test('Should error when server doesn\'t respond', function(t) {
+		t.plan(1);
+		monitor(HOST+'/timeout', options, function(err) {
+			t.ok(err);
+		});
+	});
+};
 
 server.listen(PORT, function() {
 	test1();
@@ -136,4 +151,5 @@ server.listen(PORT, function() {
 	test6();
 	test7();
 	test8();
+	test9();
 });
