@@ -1,6 +1,6 @@
 {
   "name": "http-monitor",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "Monitor an http application, and invoke if the server status changes. Both a module and a commandline tool.",
   "main": "index.js",
   "repository": {
