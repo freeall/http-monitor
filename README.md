@@ -53,6 +53,9 @@ m.on('http-error', function(err) {
 m.on('connection-error', function() {
 	console.log('The server could not be reached');
 });
+m.on('error', function(err) {
+	console.log('This is triggered on both http-error and connection-error');
+});
 m.on('recovery', function() {
 	console.log('The server just recovered after downtime');
 });
