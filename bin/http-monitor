@@ -19,6 +19,7 @@ if (argv.help || process.argv.length === 2) {
 	console.log('	--allow 501                        Allow a 4xx or 5xx code which would otherwise cause an error');
 	console.log('	--disallow 301                     Disallow a 1xx, 2xx, or 3xx code which wouldn\'t otherwise cause an error');
 	console.log('	--once                             Only run once, then exit');
+	console.log('	--silent                           Don\'t print out settings when running');
 	return;
 }
 
@@ -29,6 +30,7 @@ var disallowed = argv.disallow || [];
 var retries = argv.retries || 1;
 var timeout = argv.timeout && duration(argv.timeout);
 var interval = argv.interval && duration(argv.interval);
+var silent = !!argv.silent;
 var onerror = argv['on-error'] || '';
 var onconnectionerror = argv['on-connection-error'] || '';
 var onhttperror = argv['on-http-error'] || '';
@@ -37,19 +39,18 @@ var onrecovery = argv['on-recovery'] || '';
 var replace = function(str, url, statusCode, body) {
 	return (str || '')
 		.replace(/%url/ig, url)
-		.replace(/%statuscode/ig, statusCode)
-		.replace(/%body/ig, body)
+		.replace(/%statuscode/ig, statusCode || 'none')
+		.replace(/%body/ig, body || '')
 };
 
 var exec = function(err, stdout, stderr) {
-	if (stdout) console.log(stdout);
-	if (stderr) console.error(stderr);
-	if (err) console.error(err);
+	if (stdout) console.log(stdout.trim());
+	if (stderr) console.error(stderr.trim());
+	if (err) console.error(err.trim());
 };
 
-if (once) {
-	console.log('Settings');
-	console.log('	URL:', url);
+if (!silent) {
+	console.log('Monitor '+url+' with these settings');
 	console.log('	Interval:', interval);
 	console.log('	Max retries:', retries);
 	console.log('	Timeout:', timeout);
@@ -60,22 +61,23 @@ if (once) {
 	console.log('	On (connection and http) error:', onerror);
 	console.log('	On recovery:', onrecovery);
 }
-monitor(url, {
+var m = monitor(url, {
 	once: once,
 	allowed: allowed,
 	disallowed: disallowed,
 	interval: interval,
 	retries: retries,
 	timeout: timeout
-}, function(err, statusCode, body) {
-	if (!err && onrecovery) cp.exec(onrecovery, exec);
-	if (!err) return;
-
-	// connection error
-	if (!statusCode && onconnectionerror) cp.exec(replace(onconnectionerror, url, statusCode, body), exec);
-	if (!statusCode && onerror) cp.exec(replace(onerror, url, statusCode, body), exec);
-
-	// http error
-	if (statusCode && onhttperror) cp.exec(replace(onhttperror, url, statusCode, body), exec);
-	if (statusCode && onerror) cp.exec(replace(onerror, url, statusCode, body), exec);
+});
+m.on('http-error', function(err) {
+	cp.exec(replace(onhttperror, url, err.statusCode, err.body), exec);
+});
+m.on('connection-error', function(err) {
+	cp.exec(replace(onconnectionerror, url, err.statusCode, err.body), exec);
+});
+m.on('error', function(err) {
+	cp.exec(replace(onerror, url, err.statusCode, err.body), exec);
+});
+m.on('recovery', function() {
+	cp.exec(onrecovery, exec);
 });
