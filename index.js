@@ -1,14 +1,14 @@
 var check = require('httpcheck');
+var events = require('events');
 
-module.exports = function(url, options, callback) {
-	if (arguments.length === 2) return module.exports(url, null, options);
+module.exports = function(url, options) {
 	options = options || {};
 	options.interval = options.interval || 5000;
 	options.retries = options.retries || 1;
 	options.allowed = options.allowed || [];
 	options.disallowed = options.disallowed || [];
-	options.once = !!options.once;
 
+	var that = new events.EventEmitter();
 	var inErrorState = false;
 	var keepRunning = !options.once;
 	var checks = 0;
@@ -30,6 +30,8 @@ module.exports = function(url, options, callback) {
 				var isAllowed = options.allowed.indexOf(statusCode) >= 0;
 				var isDisallowed = options.disallowed.indexOf(statusCode) >= 0;
 
+				that.emit('check', request.statusCode);
+
 				if (isError && !isAllowed) return false;
 				if (!isError && isDisallowed) return false;
 				return true;
@@ -38,30 +40,34 @@ module.exports = function(url, options, callback) {
 			if (err) err.statusCode = statusCode;
 			if (err) err.body = body;
 
-			if (options.once) return callback(err);
-			if (!keepRunning) return;
-
 			if (err && !inErrorState) {
 				inErrorState = true;
-				callback(err);
+
+				if (!statusCode) that.emit('connection-error', err);
+				if (statusCode) that.emit('http-error', err);
+				if (that.listeners('error').length) that.emit('error', err);
 			}
 			if (!err && inErrorState) {
 				inErrorState = false;
-				callback(null);
+				that.emit('recover', err);
 			}
 
+			if (!keepRunning) return that.emit('end');
 			wait();
 		});
 	};
 
+	var timeout;
 	var wait = function() {
 		if (!keepRunning && checks++) return;
-		setTimeout(doCheck, options.interval);
+		timeout = setTimeout(doCheck, options.interval);
 	};
 
 	wait();
 
-	return function() {
+	that.destroy = function() {
 		keepRunning = false;
+		clearTimeout(timeout);
 	};
+	return that;
 };

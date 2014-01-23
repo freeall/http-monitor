@@ -42,12 +42,17 @@ The `"command..."` part is a command you want executed when an error occurs. You
 ``` js
 var monitor = require('http-monitor');
 
-monitor('http://localhost:13532/', {
-	tries: 1
-}, function(err) {
-	if (!err) return console.log('The server just recovered after having had downtime');
-	if (!err.statusCode) console.log('The server could not be reached');
-	if (err.statusCode) console.log('The server returned a '+err.statusCode+' statuscode, with the body:'+err.body);
+var m = monitor('http://localhost:13532/', {
+	retries: 1
+});
+m.on('http-error', function(err) {
+	console.log('The server returned a '+err.statusCode+' statuscode, with the body:'+err.body);
+});
+m.on('connection-error', function() {
+	console.log('The server could not be reached');
+});
+m.on('recovery', function() {
+	console.log('The server just recovered after downtime');
 });
 ```
 
@@ -58,13 +63,14 @@ The `monitor` function returns a stop-function. Call this to stop the monitor.
 ``` js
 var monitor = require('http-monitor');
 
-var stop = monitor('http://localhost:13532/', {
-	tries: 1
-}, function(err) {
-	console.log(err);
+var m = monitor('http://localhost:13532/', {
+	retries: 1
 });
 
-setTimeout(stop, 60000); // Stop the monitor after 60 seconds
+setTimeout(function() {
+	// Stop the monitor after 60 seconds
+	m.destroy();
+}, 60000);
 ```
 
 ### Options
@@ -76,6 +82,10 @@ How many miliseconds to wait between the checks. Default is `5000`.
 #### retries (integer)
 
 How many tries in a row that should fail before it will call the callback with an error. Default is `1`.
+
+#### timeout (integer)
+
+How many miliseconds should each request maximum take before it is seen as an error. Default is `30000`.
 
 #### allowed (array)
 
