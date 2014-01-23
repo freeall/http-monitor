@@ -18,7 +18,11 @@ With the commandline tool you can set up commands that will be executed when the
 
 The commands will only be called once if the state of the server changes. Like this scenario:
 
-	The server is running perfectly for 3 days, but now stops replying. This will cause the on-connection-error to be executed once. After 30 minutes the server starts to reply again, and then the on-recovery command is executed once.
+	The server is running perfectly for 3 days, but now stops replying.
+	
+	This will cause the on-connection-error to be executed once.
+	
+	After 30 minutes the server starts to reply again, and then the on-recovery command is executed once.
 
 ```
 http-monitor http://localhost:12345/foo
