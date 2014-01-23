@@ -49,7 +49,7 @@ module.exports = function(url, options) {
 			}
 			if (!err && inErrorState) {
 				inErrorState = false;
-				that.emit('recover', err);
+				that.emit('recovery', err);
 			}
 
 			if (!keepRunning) return that.emit('end');
