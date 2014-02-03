@@ -44,19 +44,15 @@ The `"command..."` part is a command you want executed when an error occurs. You
 ``` js
 var monitor = require('http-monitor');
 
-var m = monitor('http://localhost:13532/', {
+monitor('http://localhost:13532/', {
 	retries: 1
-});
-m.on('http-error', function(err) {
+}).on('http-error', function(err) {
 	console.log('The server returned a '+err.statusCode+' statuscode, with the body:'+err.body);
-});
-m.on('connection-error', function() {
+}).on('connection-error', function() {
 	console.log('The server could not be reached');
-});
-m.on('error', function(err) {
+}).on('error', function(err) {
 	console.log('This is triggered on both http-error and connection-error');
-});
-m.on('recovery', function() {
+}).on('recovery', function() {
 	console.log('The server just recovered after downtime');
 });
 ```
@@ -68,13 +64,13 @@ The `monitor` function returns a stop-function. Call this to stop the monitor.
 ``` js
 var monitor = require('http-monitor');
 
-var m = monitor('http://localhost:13532/', {
+var localhost = monitor('http://localhost:13532/', {
 	retries: 1
 });
 
 setTimeout(function() {
 	// Stop the monitor after 60 seconds
-	m.destroy();
+	localhost.destroy();
 }, 60000);
 ```
 
